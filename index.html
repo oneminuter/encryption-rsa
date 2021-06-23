@@ -149,6 +149,7 @@
 
         $(function () {
             function refreshKey() {
+                // 后端返回的 rsa 秘钥及密文接口
                 $.ajax("http://localhost:9147/encryption/rsa", {
                     success: (resp) => {
                         console.log(resp);
