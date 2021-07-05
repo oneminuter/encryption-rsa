@@ -156,3 +156,38 @@ func gzipcompress(c *gin.Context) {
 	return
 }
 ```
+
+### 关于前端接收后端二进制数据流
+```
+// 如果接收 arraybuffer 就不能使用 jquery 的 ajax, 得用原生的 XMLHttpRequest
+// 猜测可能是：jquery 接收返回内容会默认做一次 parse 导致
+// 如果坚持要用 jquery 的 ajax，可以后端转为 base64 编码，前端解码之后再解压
+```
+前端代码示例
+```
+// 前端压缩，后端解压， 前端只能用 pako.gzip 压缩，后端才能解压
+// 使用  pako.deflate 压缩，后端对应 zlib 解压，不是 gzip 解压
+function gzip() {
+    let comp = pako.gzip("hello world");
+    
+	// 使用  pako.deflate 压缩，后端对应 zlib 解压，不是 gzip 解压
+    // let result = pako.deflate("hello world");
+    // console.log(result);
+    // console.log(pako.inflate(result, { to: 'string' }));
+   
+    var oReq = new XMLHttpRequest();
+    oReq.open("POST", "http://localhost:9147/encryption/ungzip", true);
+    oReq.onload = function (oEvent) {
+        console.log(oReq.response)
+    };
+
+    oReq.send(comp);
+    // oReq.send(result);
+}
+```
+
+### 前端压缩，后端解压
+```
+// gzip: 前端压缩，后端解压， 前端用 pako.gzip 压缩，后端才能解压
+// 使用 pako.deflate 压缩，后端对应 zlib 解压，不是 gzip 解压
+```
