@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gzip 压缩/解压缩</title>
+</head>
+
+<body>
+    <script src="js/jquery-1.8.3.min.js"></script>
+    <script type="text/javascript" src="js/pako.min.js"></script>
+    <script type="text/javascript">
+        function unzip(b64Data) {
+            var strData = atob(b64Data);
+            // Convert binary string to character-number array
+            var charData = strData.split('').map(function (x) { return x.charCodeAt(0); });
+            // Turn number array into byte-array
+            var binData = new Uint8Array(charData);
+            // // unzip
+            var data = pako.inflate(binData);
+            // Convert gunzipped byteArray back to ascii string:
+            strData = String.fromCharCode.apply(null, new Uint16Array(data));
+            return strData;
+        }
+
+        function zip(str) {
+            var binaryString = pako.gzip(str, { to: 'string' });
+            return btoa(binaryString);
+        }
+
+
+        console.log(pako)
+
+        const obj = [
+            { foo: 'bar', baz: 'БАТ' },
+            { abra: 1, cadabra: null }
+        ]
+
+        // Convert /////////////////////////////////////////////////////////////////////
+
+        var str = JSON.stringify(obj);
+
+        // Compress ////////////////////////////////////////////////////////////////////
+
+        var result = window.pako.deflate(str);
+
+        console.log(window.pako.inflate(result, { to: 'string' }));
+
+        let comp = pako.gzip("hello world");
+        console.log(comp);
+        console.log(pako.ungzip(comp, { to: 'string' }));
+
+        // var arr = new Uint8Array([31,139,8,0,0,0,0,0,0,255,202,72,205,201,201,87,120,54,111,250,211,221,219,159,118,183,131,185,212,38,70,141,31,53,126,212,120,218,152,156,154,151,2,0,0,0,255,255]);
+        // console.log(pako.inflate(arr));
+
+        $(function () {
+            function getGzip() {
+                $.ajax("http://localhost:9147/encryption/gzip", {
+                    success: (resp) => {
+                        console.log(resp);
+                        let raw = atob(resp);
+                        let rawLength = raw.length;
+                        let array = new Uint8Array(new ArrayBuffer(rawLength));
+
+                        for (i = 0; i < rawLength; i++) {
+                            array[i] = raw.charCodeAt(i);
+                        }
+                        console.log(array)
+
+                        console.log(window.pako.inflate(array, { to: 'string' }))
+                        console.log(window.pako.ungzip(array, { to: 'string' }));
+
+
+
+                        let unc = window.pako.ungzip(array)
+                        let uncstr = String.fromCharCode.apply(null, new Uint8Array(unc));
+                        console.log(uncstr);
+
+
+
+
+                        let charData = raw.split('').map(function (x) { return x.charCodeAt(0); });
+                        // Turn number array into byte-array
+                        let binData = new Uint8Array(charData);
+                        // // unzip
+                        let data = pako.inflate(binData);
+                        // Convert gunzipped byteArray back to  ascii string:
+                        strData = String.fromCharCode.apply(null, new Uint16Array(data));
+                        console.log(strData);
+
+
+                        const inflator = new pako.Inflate({ to: 'string' });
+                        inflator.push(array);
+                        console.log(inflator.result)
+
+
+                        console.log(unzip(resp));
+                    }
+                });
+            }
+
+            getGzip();
+        });
+
+
+
+
+    </script>
+</body>
+
+</html>
