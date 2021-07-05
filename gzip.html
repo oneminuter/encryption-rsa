@@ -31,36 +31,81 @@
         }
 
 
-        console.log(pako)
-
-        const obj = [
-            { foo: 'bar', baz: 'БАТ' },
-            { abra: 1, cadabra: null }
-        ]
+        // const obj = [
+        //     { foo: 'bar', baz: 'БАТ' },
+        //     { abra: 1, cadabra: null }
+        // ]
 
         // Convert /////////////////////////////////////////////////////////////////////
 
-        var str = JSON.stringify(obj);
+        // var str = JSON.stringify(obj);
 
         // Compress ////////////////////////////////////////////////////////////////////
 
-        var result = window.pako.deflate(str);
+        // var result = window.pako.deflate(str);
 
-        console.log(window.pako.inflate(result, { to: 'string' }));
+        // console.log(window.pako.inflate(result, { to: 'string' }));
 
-        let comp = pako.gzip("hello world");
-        console.log(comp);
-        console.log(pako.ungzip(comp, { to: 'string' }));
+        // 前端压缩，后端解压， 前端只能用 pako.gzip 压缩，后端才能解压
+        // 使用  pako.deflate 压缩，后端对应 zlib 解压，不是 gzip 解压
+        function gzip() {
+            let comp = pako.gzip("hello world");
+            console.log(comp);
+            console.log(pako.ungzip(comp, { to: 'string' }));
 
-        // var arr = new Uint8Array([31,139,8,0,0,0,0,0,0,255,202,72,205,201,201,87,120,54,111,250,211,221,219,159,118,183,131,185,212,38,70,141,31,53,126,212,120,218,152,156,154,151,2,0,0,0,255,255]);
-        // console.log(pako.inflate(arr));
+            // 使用  pako.deflate 压缩，后端对应 zlib 解压，不是 gzip 解压
+            // let result = pako.deflate("hello world");
+            // console.log(result);
+            // console.log(pako.inflate(result, { to: 'string' }));
 
+            var oReq = new XMLHttpRequest();
+            oReq.open("POST", "http://localhost:9147/encryption/ungzip", true);
+
+            oReq.onload = function (oEvent) {
+                console.log(oReq.response)
+            };
+
+            oReq.send(comp);
+        }
+        gzip();
+
+        //  后端压缩，同时返回 arraybuffer 数据流，前端解压
+       function ungzip () {
+        var oReq = new XMLHttpRequest();
+        oReq.open("GET", "http://localhost:9147/encryption/gzip", true);
+        oReq.responseType = "arraybuffer";
+
+        oReq.onload = function (oEvent) {
+            var arrayBuffer = oReq.response; // Note: not oReq.responseText
+            if (arrayBuffer) {
+
+                var byteArray = new Uint8Array(arrayBuffer);
+                console.log(byteArray);
+
+                let data = pako.inflate(byteArray, { to: 'string' });
+                console.log(data)
+            }
+        };
+
+        oReq.send(null);
+       }
+    //    ungzip();
+
+
+        // 如果接收 arraybuffer 就不能使用 jquery 的 ajax, 得用原生的 XMLHttpRequest
+        // 猜测可能是：jquery 接收返回内容会默认做一次 parse 导致
+        // 如果坚持要用 jquery 的 ajax，可以后端转为 base64 编码，前端解码之后再解压
         $(function () {
             function getGzip() {
                 $.ajax("http://localhost:9147/encryption/gzip", {
+                    datatype: "text",
                     success: (resp) => {
+
                         console.log(resp);
+
+                        // base64 解码
                         let raw = atob(resp);
+
                         let rawLength = raw.length;
                         let array = new Uint8Array(new ArrayBuffer(rawLength));
 
@@ -69,18 +114,19 @@
                         }
                         console.log(array)
 
+                        // pako 配置参数解析成字符串
                         console.log(window.pako.inflate(array, { to: 'string' }))
                         console.log(window.pako.ungzip(array, { to: 'string' }));
 
 
-
+                        // 手动将 pako 解压的流装成字符串
                         let unc = window.pako.ungzip(array)
                         let uncstr = String.fromCharCode.apply(null, new Uint8Array(unc));
                         console.log(uncstr);
 
 
 
-
+                        // 手动将 pako 解压的流装成字符串，只是 base64 解码之后的数据转 uint8 换一种写法，使用 map
                         let charData = raw.split('').map(function (x) { return x.charCodeAt(0); });
                         // Turn number array into byte-array
                         let binData = new Uint8Array(charData);
@@ -91,21 +137,20 @@
                         console.log(strData);
 
 
+                        // 新建 pako.Inflate 的方式，push 内容，然后解压
                         const inflator = new pako.Inflate({ to: 'string' });
                         inflator.push(array);
                         console.log(inflator.result)
 
 
                         console.log(unzip(resp));
-                    }
+                    },
+                    error: (err) => console.error(err),
                 });
             }
 
-            getGzip();
+            // getGzip();
         });
-
-
-
 
     </script>
 </body>
