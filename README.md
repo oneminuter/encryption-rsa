@@ -1,7 +1,7 @@
 # encryption-rsa
 js rsa 分段加解密，支持中文 &amp; 任意 秘钥长度
 
-前端代码位于 index.html 中
+前端代码位于 rsa.html 中
 
 后端 Go 使用 github.com/wenzhenxi/gorsa 加密返回
 
